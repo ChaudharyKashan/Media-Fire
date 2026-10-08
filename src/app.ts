@@ -133,7 +133,8 @@ app.use(
 app.use((req: any, res: any, next: any) => {
   const cookies = parseCookies(req);
   let rawToken = cookies['mf_session'];
-  const queryToken = req.query.sid || req.query.t;
+  const headerToken = req.headers['x-session-token'];
+  const queryToken = req.query.sid || req.query.t || headerToken;
   if (!rawToken && queryToken) {
     rawToken = String(queryToken);
   }
@@ -162,6 +163,24 @@ app.use((req: any, res: any, next: any) => {
     }
   }
 
+  if (queryToken && typeof res.redirect === 'function') {
+    const origRedirect = res.redirect.bind(res);
+    res.redirect = function (statusOrUrl: any, maybeUrl?: any) {
+      let target = typeof statusOrUrl === 'string' ? statusOrUrl : maybeUrl;
+      if (
+        typeof target === 'string' &&
+        (target.startsWith('/dashboard') || target.startsWith('/upload') || target.startsWith('/profile')) &&
+        !target.includes('sid=')
+      ) {
+        target += (target.includes('?') ? '&' : '?') + 'sid=' + encodeURIComponent(String(queryToken));
+        if (typeof statusOrUrl === 'string') return origRedirect(target);
+        return origRedirect(statusOrUrl, target);
+      }
+      if (typeof statusOrUrl === 'string') return origRedirect(statusOrUrl);
+      return origRedirect(statusOrUrl, maybeUrl);
+    };
+  }
+
   next();
 });
 
@@ -179,9 +198,17 @@ app.use(
 
 const uploadChunk = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 15 * 1024 * 1024 },
 });
-const uploadChunkMiddleware: any = uploadChunk.single('chunk');
+const rawUploadChunkMiddleware: any = uploadChunk.single('chunk');
+function uploadChunkMiddleware(req: any, res: any, next: any) {
+  rawUploadChunkMiddleware(req, res, (err: any) => {
+    if (err) {
+      return res.status(400).json({ ok: false, error: err.message || 'Chunk upload error' });
+    }
+    next();
+  });
+}
 
 // Middleware to get current authenticated user
 function getCurrentUser(req: any): User | null {
@@ -929,10 +956,19 @@ app.post(['/dashboard', '/dashboard.php'], requireAuth, async (req, res) => {
 // ----------------------------------------------------
 // UPLOAD PAGE & CHUNKED UPLOAD API
 // ----------------------------------------------------
-app.get(['/upload', '/upload.php'], requireAuth, (req, res) => {
+app.get(['/upload', '/upload.php'], requireAuth, async (req, res) => {
+  await ensureStorageSynced();
+  const user = res.locals.currentUser as User;
   const currentFolder = String(req.query.folder || '0');
+  const sessionToken = signSession({
+    user_id: user.id,
+    username: user.username,
+    user_email: user.email,
+    cached_user: user,
+  });
   res.render('upload', {
     currentFolder,
+    sessionToken,
   });
 });
 
@@ -949,146 +985,191 @@ interface UploadState {
 }
 
 app.post(['/upload_api', '/upload_api.php'], uploadChunkMiddleware, async (req: any, res: any) => {
-  const user = getCurrentUser(req);
-  if (!user) {
-    return res.status(401).json({ ok: false, error: 'Unauthorized' });
-  }
+  try {
+    await ensureStorageSynced();
+    if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true });
+    if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
-  const action = req.body.action;
-  const safeId = (id: string) => typeof id === 'string' && /^[a-f0-9]{32}$/.test(id);
-  const statePath = (id: string) => path.join(TMP_DIR, `${id}.json`);
-  const partPath = (id: string) => path.join(TMP_DIR, `${id}.part`);
-
-  const loadState = (id: string): UploadState | null => {
-    if (!safeId(id)) return null;
-    const p = statePath(id);
-    if (!fs.existsSync(p)) return null;
-    try {
-      const s = JSON.parse(fs.readFileSync(p, 'utf-8')) as UploadState;
-      if (s.user_id !== user.id) return null;
-      return s;
-    } catch {
-      return null;
-    }
-  };
-
-  if (action === 'init') {
-    const name = path.basename(String(req.body.name || ''));
-    const size = parseInt(String(req.body.size || '0'), 10);
-    const type = String(req.body.type || 'application/octet-stream').substring(0, 200);
-    const folder = String(req.body.folder_id || '0');
-
-    if (!name || size < 1) {
-      return res.status(400).json({ ok: false, error: 'Invalid file' });
+    const user = getCurrentUser(req);
+    if (!user) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
     }
 
-    const id = crypto.randomBytes(16).toString('hex');
-    const ext = path.extname(name);
-    const stored = `${Date.now()}_${crypto.randomBytes(8).toString('hex')}${ext}`;
+    const action = req.body.action;
+    const safeId = (id: string) => typeof id === 'string' && /^[a-f0-9]{32}$/.test(id);
+    const statePath = (id: string) => path.join(TMP_DIR, `${id}.json`);
+    const partPath = (id: string) => path.join(TMP_DIR, `${id}.part`);
 
-    const s: UploadState = {
-      id,
-      user_id: user.id,
-      original_name: name,
-      size,
-      type,
-      folder_id: folder,
-      stored_name: stored,
-      offset: 0,
-      created: Math.floor(Date.now() / 1000),
+    const loadState = (id: string): UploadState | null => {
+      if (!safeId(id)) return null;
+      const p = statePath(id);
+      if (!fs.existsSync(p)) return null;
+      try {
+        const s = JSON.parse(fs.readFileSync(p, 'utf-8')) as UploadState;
+        if (s.user_id !== user.id) return null;
+        return s;
+      } catch {
+        return null;
+      }
     };
 
-    fs.writeFileSync(statePath(id), JSON.stringify(s, null, 2), 'utf-8');
-    fs.writeFileSync(partPath(id), Buffer.alloc(0));
+    if (action === 'init') {
+      const name = path.basename(String(req.body.name || ''));
+      const size = parseInt(String(req.body.size || '0'), 10);
+      const type = String(req.body.type || 'application/octet-stream').substring(0, 200);
+      const folder = String(req.body.folder_id || '0');
 
-    return res.json({ ok: true, upload_id: id, offset: 0 });
-  }
+      if (!name || isNaN(size) || size < 0) {
+        return res.status(400).json({ ok: false, error: 'Invalid file' });
+      }
 
-  if (action === 'status') {
-    const s = loadState(String(req.body.upload_id || ''));
-    if (!s) return res.status(404).json({ ok: false, error: 'Upload session not found' });
-    const actual = fs.existsSync(partPath(s.id)) ? fs.statSync(partPath(s.id)).size : 0;
-    if (actual !== s.offset) {
-      s.offset = actual;
+      const id = crypto.randomBytes(16).toString('hex');
+      const ext = path.extname(name);
+      const stored = `${Date.now()}_${crypto.randomBytes(8).toString('hex')}${ext}`;
+
+      const s: UploadState = {
+        id,
+        user_id: user.id,
+        original_name: name,
+        size,
+        type,
+        folder_id: folder,
+        stored_name: stored,
+        offset: 0,
+        created: Math.floor(Date.now() / 1000),
+      };
+
+      fs.writeFileSync(statePath(id), JSON.stringify(s, null, 2), 'utf-8');
+      fs.writeFileSync(partPath(id), Buffer.alloc(0));
+
+      return res.json({ ok: true, upload_id: id, offset: 0 });
+    }
+
+    if (action === 'status') {
+      const s = loadState(String(req.body.upload_id || ''));
+      if (!s) return res.status(404).json({ ok: false, error: 'Upload session not found' });
+      const actual = fs.existsSync(partPath(s.id)) ? fs.statSync(partPath(s.id)).size : 0;
+      if (actual !== s.offset) {
+        s.offset = actual;
+        fs.writeFileSync(statePath(s.id), JSON.stringify(s, null, 2), 'utf-8');
+      }
+      return res.json({ ok: true, offset: s.offset });
+    }
+
+    if (action === 'chunk') {
+      const uploadId = String(req.body.upload_id || '');
+      let s = loadState(uploadId);
+      const offset = parseInt(String(req.body.offset || '-1'), 10);
+
+      // Self-heal if state was lost on serverless cold start and offset is 0
+      if (!s && safeId(uploadId) && offset === 0 && req.body.name) {
+        const name = path.basename(String(req.body.name || ''));
+        const size = parseInt(String(req.body.size || '0'), 10);
+        const type = String(req.body.type || 'application/octet-stream').substring(0, 200);
+        const folder = String(req.body.folder_id || '0');
+        const ext = path.extname(name);
+        const stored = `${Date.now()}_${crypto.randomBytes(8).toString('hex')}${ext}`;
+        s = {
+          id: uploadId,
+          user_id: user.id,
+          original_name: name,
+          size,
+          type,
+          folder_id: folder,
+          stored_name: stored,
+          offset: 0,
+          created: Math.floor(Date.now() / 1000),
+        };
+        fs.writeFileSync(statePath(uploadId), JSON.stringify(s, null, 2), 'utf-8');
+        fs.writeFileSync(partPath(uploadId), Buffer.alloc(0));
+      }
+
+      if (!s) return res.status(404).json({ ok: false, error: 'Upload session not found' });
+
+      const actualDiskOffset = fs.existsSync(partPath(s.id)) ? fs.statSync(partPath(s.id)).size : 0;
+      if (actualDiskOffset !== s.offset) {
+        s.offset = actualDiskOffset;
+      }
+
+      if (offset !== s.offset) {
+        return res.status(409).json({ ok: false, error: 'Offset mismatch. Resume status first.', offset: s.offset });
+      }
+
+      if (!req.file || !req.file.buffer) {
+        return res.status(400).json({ ok: false, error: 'Chunk upload failed' });
+      }
+
+      const len = req.file.buffer.length;
+      if (len < 1 || len > 15 * 1024 * 1024) {
+        return res.status(400).json({ ok: false, error: 'Invalid chunk size' });
+      }
+
+      if (offset + len > s.size) {
+        return res.status(400).json({ ok: false, error: 'Chunk exceeds file size' });
+      }
+
+      fs.appendFileSync(partPath(s.id), req.file.buffer);
+      s.offset = fs.statSync(partPath(s.id)).size;
       fs.writeFileSync(statePath(s.id), JSON.stringify(s, null, 2), 'utf-8');
+
+      return res.json({ ok: true, offset: s.offset });
     }
-    return res.json({ ok: true, offset: s.offset });
+
+    if (action === 'complete') {
+      const s = loadState(String(req.body.upload_id || ''));
+      if (!s) return res.status(404).json({ ok: false, error: 'Upload session not found' });
+
+      const actualDiskOffset = fs.existsSync(partPath(s.id)) ? fs.statSync(partPath(s.id)).size : 0;
+      if (actualDiskOffset !== s.size && s.offset !== s.size) {
+        return res.status(400).json({ ok: false, error: 'Upload is incomplete' });
+      }
+
+      const target = path.join(UPLOADS_DIR, s.stored_name);
+      try {
+        fs.renameSync(partPath(s.id), target);
+      } catch {
+        try {
+          fs.copyFileSync(partPath(s.id), target);
+          fs.unlinkSync(partPath(s.id));
+        } catch {
+          return res.status(500).json({ ok: false, error: 'Could not finalize file' });
+        }
+      }
+
+      const all = readJson<Record<string, FileItem>>('files.json', {});
+      const fid = crypto.randomBytes(5).toString('hex');
+      all[fid] = {
+        user_id: s.user_id,
+        username: user.username || 'Unknown',
+        email: user.email || '',
+        uploaded_by: 'member',
+        original_name: s.original_name,
+        filename: s.stored_name,
+        size: s.size,
+        type: s.type,
+        folder_id: s.folder_id,
+        date: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        downloads: 0,
+      };
+      await saveFilePersistent(fid, all[fid]);
+
+      const users = readJson<User[]>('users.json', []);
+      const uIndex = users.findIndex((u) => u.id === s.user_id);
+      if (uIndex !== -1) {
+        users[uIndex].storage_used = (users[uIndex].storage_used || 0) + s.size;
+        await saveUserPersistent(users[uIndex]);
+      }
+
+      try { fs.unlinkSync(statePath(s.id)); } catch {}
+
+      return res.json({ ok: true, id: fid });
+    }
+
+    return res.status(400).json({ ok: false, error: 'Unknown action' });
+  } catch (err: any) {
+    console.error('upload_api error:', err);
+    return res.status(500).json({ ok: false, error: err?.message || 'Internal upload error' });
   }
-
-  if (action === 'chunk') {
-    const s = loadState(String(req.body.upload_id || ''));
-    if (!s) return res.status(404).json({ ok: false, error: 'Upload session not found' });
-
-    const offset = parseInt(String(req.body.offset || '-1'), 10);
-    if (offset !== s.offset) {
-      return res.status(409).json({ ok: false, error: 'Offset mismatch. Resume status first.' });
-    }
-
-    if (!req.file || !req.file.buffer) {
-      return res.status(400).json({ ok: false, error: 'Chunk upload failed' });
-    }
-
-    const len = req.file.buffer.length;
-    if (len < 1 || len > 9 * 1024 * 1024) {
-      return res.status(400).json({ ok: false, error: 'Invalid chunk size' });
-    }
-
-    if (offset + len > s.size) {
-      return res.status(400).json({ ok: false, error: 'Chunk exceeds file size' });
-    }
-
-    fs.appendFileSync(partPath(s.id), req.file.buffer);
-    s.offset = fs.statSync(partPath(s.id)).size;
-    fs.writeFileSync(statePath(s.id), JSON.stringify(s, null, 2), 'utf-8');
-
-    return res.json({ ok: true, offset: s.offset });
-  }
-
-  if (action === 'complete') {
-    const s = loadState(String(req.body.upload_id || ''));
-    if (!s) return res.status(404).json({ ok: false, error: 'Upload session not found' });
-
-    if (s.offset !== s.size) {
-      return res.status(400).json({ ok: false, error: 'Upload is incomplete' });
-    }
-
-    const target = path.join(UPLOADS_DIR, s.stored_name);
-    try {
-      fs.renameSync(partPath(s.id), target);
-    } catch {
-      return res.status(500).json({ ok: false, error: 'Could not finalize file' });
-    }
-
-    const all = readJson<Record<string, FileItem>>('files.json', {});
-    const fid = crypto.randomBytes(5).toString('hex');
-    all[fid] = {
-      user_id: s.user_id,
-      username: user.username || 'Unknown',
-      email: user.email || '',
-      uploaded_by: 'member',
-      original_name: s.original_name,
-      filename: s.stored_name,
-      size: s.size,
-      type: s.type,
-      folder_id: s.folder_id,
-      date: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      downloads: 0,
-    };
-    await saveFilePersistent(fid, all[fid]);
-
-    const users = readJson<User[]>('users.json', []);
-    const uIndex = users.findIndex((u) => u.id === s.user_id);
-    if (uIndex !== -1) {
-      users[uIndex].storage_used = (users[uIndex].storage_used || 0) + s.size;
-      await saveUserPersistent(users[uIndex]);
-    }
-
-    try { fs.unlinkSync(statePath(s.id)); } catch {}
-
-    return res.json({ ok: true, id: fid });
-  }
-
-  return res.status(400).json({ ok: false, error: 'Unknown action' });
 });
 
 // ----------------------------------------------------

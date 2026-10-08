@@ -363,8 +363,22 @@
     });
 
     try {
-        const sidParam = new URLSearchParams(location.search).get('sid');
-        if (sidParam) sessionStorage.setItem('mf_sid', sidParam);
+        const sidParam = new URLSearchParams(location.search).get('sid') || sessionStorage.getItem('mf_sid');
+        if (sidParam) {
+            sessionStorage.setItem('mf_sid', sidParam);
+            document.querySelectorAll('a[href^="/upload"], a[href^="/dashboard"], a[href^="/profile"]').forEach(a => {
+                const href = a.getAttribute('href') || '';
+                if (href && !href.includes('sid=')) {
+                    a.setAttribute('href', href + (href.includes('?') ? '&' : '?') + 'sid=' + encodeURIComponent(sidParam));
+                }
+            });
+            document.querySelectorAll('form[action^="/dashboard"]').forEach(f => {
+                const act = f.getAttribute('action') || '';
+                if (act && !act.includes('sid=')) {
+                    f.setAttribute('action', act + (act.includes('?') ? '&' : '?') + 'sid=' + encodeURIComponent(sidParam));
+                }
+            });
+        }
     } catch(e) {}
 
     function itemClick(el,e,url){
