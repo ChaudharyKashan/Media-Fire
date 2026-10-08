@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="description" content="Chaudhary Kashan Meyo (MediaFire) — secure file and folder sharing platform for uploading, organizing, sharing and downloading files.">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Chaudhary Kashan Meyo">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png?v=20260913-2">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=20260913-2">
+    <link rel="shortcut icon" href="/favicon.ico?v=20260913-2">
+    <link rel="apple-touch-icon" href="/favicon.png?v=20260913-2">
+    <meta name="theme-color" content="#0a0e17">
+    <title>Chaudhary Kashan Meyo (MediaFire)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        html,body{height:100%;overflow:hidden;}
+        body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0e17;color:#f1f5f9;font-size:13px;display:flex;flex-direction:column;}
+        
+        .app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+        
+        .topbar{background:#111827;border-bottom:1px solid #1e293b;padding:0 12px;height:44px;min-height:44px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+        .topbar .brand{font-size:16px;font-weight:800;color:#3b82f6;}
+        .topbar .actions{display:flex;gap:4px;}
+        .topbar .actions button,.topbar .actions a{width:30px;height:30px;border-radius:50%;border:1px solid #1e293b;background:#0a0e17;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:12px;}
+        .topbar .actions .upload{background:#3b82f6;color:#fff;border:none;}
+        
+        .breadcrumb{background:#111827;border-bottom:1px solid #1e293b;padding:4px 12px;font-size:11px;display:flex;align-items:center;overflow-x:auto;flex-shrink:0;min-height:30px;}
+        .breadcrumb a{color:#60a5fa;text-decoration:none;padding:2px 6px;}
+        .breadcrumb .sep{color:#64748b;margin:0 2px;}
+        
+        .content{flex:1;overflow-y:auto;padding:4px 0;}
+        
+        .item{display:flex;align-items:center;padding:8px 12px;border-bottom:1px solid #1a2332;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;}
+        .item:hover{background:#111827;}
+        .item .icon{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+        .item .icon.folder{background:rgba(59,130,246,0.1);color:#3b82f6;}
+        .item .info{flex:1;min-width:0;margin-left:8px;}
+        .item .info .name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .item .info .meta{font-size:9px;color:#64748b;}
+        .item .del{color:#64748b;background:none;border:none;cursor:pointer;font-size:12px;padding:4px;}
+        .item .del:hover{color:#ef4444;}
+        .item .actions{display:flex;align-items:center;gap:3px;margin-left:4px;position:relative;}
+        .item .action-btn{color:#64748b;background:none;border:none;cursor:pointer;font-size:12px;padding:5px;text-decoration:none;}
+        .item .action-btn:hover{color:#60a5fa;}
+        .item-menu{display:none;position:absolute;right:0;top:28px;z-index:150;min-width:170px;background:#111827;border:1px solid #263244;border-radius:9px;box-shadow:0 12px 28px rgba(0,0,0,.45);overflow:hidden;}
+        .item-menu.show{display:block;}
+        .item-menu button,.item-menu a{width:100%;display:flex;align-items:center;gap:9px;padding:10px 12px;background:none;border:0;color:#e2e8f0;text-decoration:none;font-size:11px;text-align:left;cursor:pointer;}
+        .item-menu button:hover,.item-menu a:hover{background:#1e293b;color:#60a5fa;}
+        .item-menu i{width:14px;text-align:center;color:#94a3b8;}
+        .item-menu .menu-cancel{border-top:1px solid #1e293b;color:#94a3b8;font-weight:600;}
+        .item-menu .menu-cancel:hover{background:#1e293b;color:#f87171;}
+        .item-menu .menu-cancel i{color:#f87171;}
+        .item.selected{background:#172554;border-bottom-color:#29477a;}
+        .item .select-box{width:22px;height:22px;display:none;align-items:center;justify-content:center;margin-right:5px;flex-shrink:0;}
+        .selection-mode .item .select-box{display:flex;}
+        .select-box input{width:17px;height:17px;accent-color:#3b82f6;cursor:pointer;}
+        .selection-bar{display:none;background:#111827;border-bottom:1px solid #263244;height:44px;padding:0 10px;align-items:center;gap:8px;flex-shrink:0;}
+        .selection-bar.show{display:flex;}
+        .selection-bar .count{font-size:12px;font-weight:700;flex:1;}
+        .selection-bar button{border:0;background:#0a0e17;color:#cbd5e1;border:1px solid #263244;border-radius:7px;width:31px;height:31px;cursor:pointer;}
+        .selection-bar button:hover{color:#60a5fa;border-color:#3b82f6;}
+        .bulk-menu{display:none;position:fixed;right:10px;top:48px;z-index:500;min-width:180px;background:#111827;border:1px solid #263244;border-radius:9px;box-shadow:0 12px 28px rgba(0,0,0,.5);overflow:hidden;}
+        .bulk-menu.show{display:block;}
+        .bulk-menu button{width:100%;padding:11px 13px;background:none;border:0;color:#e2e8f0;text-align:left;font-size:11px;display:flex;gap:9px;align-items:center;cursor:pointer;}
+        .bulk-menu button:hover{background:#1e293b;color:#60a5fa;}
+        .move-select{display:none;position:fixed;z-index:200;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:450px;background:#111827;border-top:1px solid #1e293b;padding:14px;box-shadow:0 -10px 30px rgba(0,0,0,.35);}
+        .move-select.show{display:block;}
+        .move-select h4{font-size:13px;margin-bottom:8px;text-align:center;}
+        .move-select select{width:100%;padding:10px;background:#0a0e17;color:#f1f5f9;border:1px solid #1e293b;border-radius:7px;}
+        .new-destination{width:100%;margin-top:10px;padding:9px;border:1px dashed #334155;border-radius:7px;background:#0a0e17;color:#60a5fa;font-weight:600;font-size:11px;cursor:pointer}.new-destination:hover{border-color:#3b82f6;background:#111827}.move-actions{display:flex;gap:8px;margin-top:10px}.move-actions button{flex:1;padding:9px;border:0;border-radius:7px;font-weight:600;cursor:pointer}.move-cancel{background:#1e293b;color:#94a3b8}.move-ok{background:#3b82f6;color:#fff}
+        
+        .empty{text-align:center;padding:40px 20px;color:#64748b;}
+        .empty i{font-size:32px;display:block;margin-bottom:8px;}
+        
+        .bottom-bar{background:#111827;border-top:1px solid #1e293b;height:48px;min-height:48px;display:flex;align-items:center;justify-content:space-around;flex-shrink:0;padding:0 4px;}
+        .bottom-bar a,.bottom-bar button{display:flex;flex-direction:column;align-items:center;color:#64748b;text-decoration:none;background:none;border:none;font-size:8px;cursor:pointer;padding:4px 8px;}
+        .bottom-bar a i,.bottom-bar button i{font-size:14px;margin-bottom:1px;}
+        .bottom-bar .active{color:#3b82f6;}
+        .bottom-bar .upload-btn{background:#3b82f6;color:#fff;border-radius:16px;flex-direction:row;padding:4px 12px;gap:4px;font-size:10px;font-weight:600;}
+        .bottom-bar .upload-btn i{font-size:12px;margin:0;}
+        
+        .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;min-height:100dvh;background:rgba(0,0,0,0.72);backdrop-filter:blur(2px);z-index:99999;align-items:flex-end;justify-content:center;padding:0 0 env(safe-area-inset-bottom, 0px) 0;box-sizing:border-box;}
+        .modal.show{display:flex !important;}
+        .modal-box{background:#111827;border-radius:18px 18px 0 0;width:100%;max-width:440px;margin:0 auto;padding:20px 20px calc(24px + env(safe-area-inset-bottom, 0px)) 20px;border:1px solid #263244;border-bottom:none;box-shadow:0 -10px 30px rgba(0,0,0,0.7);box-sizing:border-box;animation:modalSlideUp 0.2s ease-out;}
+        @keyframes modalSlideUp{from{transform:translateY(100%);opacity:0.6;}to{transform:translateY(0);opacity:1;}}
+        .modal-box h3{font-size:15px;text-align:center;margin-bottom:14px;color:#f1f5f9;display:flex;align-items:center;justify-content:center;}
+        .modal-box .field{margin-bottom:14px;}
+        .modal-box .field label{font-size:11px;color:#94a3b8;display:block;margin-bottom:5px;font-weight:600;}
+        .modal-box .field input{width:100%;padding:11px 12px;background:#0a0e17;border:1px solid #334155;border-radius:8px;color:#f1f5f9;font-size:14px;outline:none;box-sizing:border-box;}
+        .modal-box .field input:focus{border-color:#3b82f6;}
+        .modal-box .actions{display:flex;gap:10px;margin-top:16px;}
+        .modal-box .actions button{flex:1;padding:12px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;}
+        .modal-box .actions .cancel{background:#1e293b;color:#cbd5e1;border:1px solid #334155;}
+        .modal-box .actions .cancel:hover{background:#334155;color:#fff;}
+        .modal-box .actions .confirm{background:#3b82f6;color:#fff;box-shadow:0 2px 8px rgba(59,130,246,0.35);}
+        .modal-box .actions .confirm:hover{background:#2563eb;}
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="topbar">
+        <div class="brand"><%= siteName %></div>
+        <div class="actions">
+            <button type="button" onclick="openFolderModal()" title="New Folder"><i class="fas fa-folder-plus"></i></button>
+            <a href="/upload.php?folder=<%= currentFolder %>" class="upload"><i class="fas fa-plus"></i></a>
+        </div>
+    </div>
+    
+    <div class="selection-bar" id="selectionBar">
+        <button type="button" title="Select all" onclick="selectAllVisible()"><i class="fas fa-check-double"></i></button>
+        <div class="count"><span id="selectedCount">0</span> selected</div>
+        <button type="button" title="More" onclick="toggleBulkMenu()"><i class="fas fa-ellipsis-vertical"></i></button>
+        <button type="button" title="Cancel selection" onclick="clearSelection()"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="bulk-menu" id="bulkMenu">
+        <button onclick="bulkAction('move')"><i class="fas fa-folder-tree"></i> Move</button>
+        <button onclick="bulkAction('copy')"><i class="fas fa-copy"></i> Copy</button>
+        <button onclick="bulkAction('delete')"><i class="fas fa-trash"></i> Delete</button>
+        <button onclick="clearSelection()"><i class="fas fa-xmark"></i> Cancel</button>
+    </div>
+
+    <div class="breadcrumb">
+        <a href="/dashboard.php?folder=0"><i class="fas fa-home"></i></a>
+        <% breadcrumbPath.forEach(crumb => { %>
+            <span class="sep">/</span>
+            <a href="/dashboard.php?folder=<%= crumb.id %>"><%= crumb.name %></a>
+        <% }); %>
+    </div>
+    
+    <div class="content">
+        <% if (subFolders.length === 0 && userFiles.length === 0) { %>
+            <div class="empty">
+                <i class="fas fa-folder-open"></i>
+                <p>Folder is empty</p>
+                <p style="font-size:11px;margin-top:4px;">Tap + to upload files</p>
+            </div>
+        <% } else { %>
+            <% subFolders.forEach(f => { %>
+            <div class="item" data-kind="folder" data-id="<%= f.id %>" data-name="<%= (f.name || '').replace(/"/g, '&quot;') %>" data-type="Folder" onclick="itemClick(this, event, '/dashboard.php?folder=<%= f.id %>')" oncontextmenu="enableSelection(event,this)">
+                <div class="select-box"><input type="checkbox" onclick="event.stopPropagation(); updateSelection(this)"></div>
+                <div class="icon folder"><i class="fas fa-folder"></i></div>
+                <div class="info">
+                    <div class="name">
+                        <%= f.name %>
+                        <% if (f.password) { %>
+                            <i class="fas fa-lock" style="color:#f59e0b;font-size:11px;margin-left:4px;" title="Password Protected"></i>
+                        <% } %>
+                    </div>
+                    <div class="meta"><%= f.sizeFormatted %></div>
+                </div>
+                <div class="actions" onclick="event.stopPropagation();">
+                    <button class="action-btn menu-trigger" title="More options" onclick="toggleMenu(this)"><i class="fas fa-ellipsis-vertical"></i></button>
+                    <div class="item-menu">
+                        <button type="button" class="rename-action-btn" data-kind="folder" data-id="<%= f.id %>" data-name="<%= encodeURIComponent(f.name) %>" onclick="triggerRename(this, event)"><i class="fas fa-pen"></i> Rename</button>
+                        <button type="button" onclick="copyFolderHostLink('<%= f.id %>')"><i class="fas fa-bolt" style="color:#10b981;"></i> Host Link</button>
+                        <button type="button" onclick="openPasswordModal('folder','<%= f.id %>','<%= f.password ? '1' : '0' %>')"><i class="fas fa-lock" style="color:#f59e0b;"></i> <%= f.password ? 'Change Password' : 'Set Password' %></button>
+                        <button type="button" onclick="copyFolderLink('<%= f.id %>')"><i class="fas fa-link" style="color:#3b82f6;"></i> Copy Link</button>
+                        <a href="/folder_download.php?id=<%= encodeURIComponent(f.id) %>"><i class="fas fa-file-zipper" style="color:#a78bfa;"></i> Download ZIP</a>
+                        <button onclick="openMove('folder','<%= f.id %>','<%= f.parent_id || '0' %>')"><i class="fas fa-folder-tree"></i> Move Folder</button>
+                        <button onclick="openCopy('folder','<%= f.id %>','<%= f.parent_id || '0' %>')"><i class="fas fa-copy"></i> Copy Folder</button>
+                        <a href="/dashboard.php?delete_folder=<%= f.id %>&folder=<%= currentFolder %>" onclick="return confirm('Delete this folder and everything inside it?')"><i class="fas fa-trash" style="color:#ef4444;"></i> Delete Folder</a>
+                        <button type="button" class="menu-cancel" onclick="closeAllMenus(event)"><i class="fas fa-xmark"></i> Cancel</button>
+                    </div>
+                </div>
+            </div>
+            <% }); %>
+            
+            <% userFiles.forEach(f => { %>
+            <div class="item" data-kind="file" data-id="<%= f.share_id %>" data-name="<%= (f.original_name || '').replace(/"/g, '&quot;') %>" data-type="<%= f.ext || 'File' %>" onclick="itemClick(this, event, '/share.php?id=<%= f.share_id %>')" oncontextmenu="enableSelection(event,this)">
+                <div class="select-box"><input type="checkbox" onclick="event.stopPropagation(); updateSelection(this)"></div>
+                <div class="icon" style="color:<%= f.iconColor %>;"><i class="far <%= f.iconClass %>"></i></div>
+                <div class="info">
+                    <div class="name">
+                        <%= f.original_name %>
+                        <% if (f.password) { %>
+                            <i class="fas fa-lock" style="color:#f59e0b;font-size:11px;margin-left:4px;" title="Password Protected"></i>
+                        <% } %>
+                    </div>
+                    <div class="meta"><%= f.sizeFormatted %></div>
+                </div>
+                <div class="actions" onclick="event.stopPropagation();">
+                    <button class="action-btn menu-trigger" title="More options" onclick="toggleMenu(this)"><i class="fas fa-ellipsis-vertical"></i></button>
+                    <div class="item-menu">
+                        <button type="button" class="rename-action-btn" data-kind="file" data-id="<%= f.share_id %>" data-name="<%= encodeURIComponent(f.original_name) %>" onclick="triggerRename(this, event)"><i class="fas fa-pen"></i> Rename</button>
+                        <button type="button" onclick="copyFileHostLink('<%= f.share_id %>')"><i class="fas fa-bolt" style="color:#10b981;"></i> Host Link</button>
+                        <button type="button" onclick="openPasswordModal('file','<%= f.share_id %>','<%= f.password ? '1' : '0' %>')"><i class="fas fa-lock" style="color:#f59e0b;"></i> <%= f.password ? 'Change Password' : 'Set Password' %></button>
+                        <button type="button" onclick="copyFileLink('<%= f.share_id %>')"><i class="fas fa-link" style="color:#3b82f6;"></i> Copy Link</button>
+                        <a href="/download.php?id=<%= f.share_id %>"><i class="fas fa-download"></i> Download</a>
+                        <button onclick="openMove('file','<%= f.share_id %>','<%= f.folder_id || '0' %>')"><i class="fas fa-folder-tree"></i> Move File</button>
+                        <button onclick="openCopy('file','<%= f.share_id %>','<%= f.folder_id || '0' %>')"><i class="fas fa-copy"></i> Copy File</button>
+                        <a href="/dashboard.php?delete_file=<%= f.share_id %>&folder=<%= currentFolder %>" onclick="return confirm('Delete this file?')"><i class="fas fa-trash" style="color:#ef4444;"></i> Delete File</a>
+                        <button type="button" class="menu-cancel" onclick="closeAllMenus(event)"><i class="fas fa-xmark"></i> Cancel</button>
+                    </div>
+                </div>
+            </div>
+            <% }); %>
+        <% } %>
+    </div>
+    
+    <div class="bottom-bar">
+        <a href="/dashboard.php" class="<%= currentFolder === '0' ? 'active' : '' %>"><i class="fas fa-folder-open"></i><span>Files</span></a>
+        <a href="/upload.php?folder=<%= currentFolder %>" class="upload-btn"><i class="fas fa-plus"></i> Upload</a>
+        <a href="/profile.php"><i class="fas fa-user"></i><span>Profile</span></a>
+        <a href="/logout.php"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+    </div>
+</div>
+
+<div class="modal" id="folderModal" onclick="if(event.target===this)closeModal('folderModal')">
+    <div class="modal-box" onclick="event.stopPropagation();">
+        <h3><i class="fas fa-folder-plus" style="color:#3b82f6;margin-right:6px;"></i> Create New Folder</h3>
+        <form method="POST" action="/dashboard.php" id="createFolderForm" onsubmit="return handleFolderCreate(event)">
+            <input type="hidden" name="parent_id" value="<%= currentFolder %>">
+            <input type="hidden" name="create_folder" value="1">
+            <div class="field">
+                <label>Folder Name</label>
+                <input type="text" name="folder_name" id="folderNameInput" required autocomplete="off" placeholder="Enter folder name">
+            </div>
+            <div class="actions">
+                <button type="button" class="cancel" onclick="closeModal('folderModal')"><i class="fas fa-xmark"></i> Cancel</button>
+                <button type="submit" class="confirm" id="saveFolderBtn"><i class="fas fa-check"></i> Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="destinationFolderModal" onclick="if(event.target===this)closeModal('destinationFolderModal')">
+    <div class="modal-box" onclick="event.stopPropagation();">
+        <h3><i class="fas fa-folder-plus" style="color:#3b82f6;margin-right:6px;"></i> Create Destination Folder</h3>
+        <div class="field"><label>Folder Name</label><input type="text" id="destinationFolderName" autocomplete="off" placeholder="Enter folder name"></div>
+        <div class="actions">
+            <button type="button" class="cancel" onclick="closeModal('destinationFolderModal')"><i class="fas fa-xmark"></i> Cancel</button>
+            <button type="button" class="confirm" onclick="createDestinationFolder()"><i class="fas fa-check"></i> Save</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="renameModal" onclick="if(event.target===this)closeModal('renameModal')">
+    <div class="modal-box" onclick="event.stopPropagation();">
+        <h3><i class="fas fa-pen" style="color:#3b82f6;margin-right:6px;"></i> <span id="renameTitle">Rename</span></h3>
+        <form method="POST" action="/dashboard.php" id="renameForm" onsubmit="return handleRenameSubmit(event)">
+            <input type="hidden" name="parent_id" value="<%= currentFolder %>">
+            <input type="hidden" name="action_type" value="rename">
+            <input type="hidden" name="item_kind" id="renameItemKind" value="">
+            <input type="hidden" name="item_id" id="renameItemId" value="">
+            <div class="field">
+                <label id="renameLabel">New Name</label>
+                <input type="text" name="new_name" id="renameInput" required autocomplete="off" placeholder="Enter new name">
+            </div>
+            <div class="actions">
+                <button type="button" class="cancel" onclick="closeModal('renameModal')"><i class="fas fa-xmark"></i> Cancel</button>
+                <button type="submit" class="confirm" id="saveRenameBtn"><i class="fas fa-check"></i> Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal" id="passwordModal" onclick="if(event.target===this)closeModal('passwordModal')">
+    <div class="modal-box" onclick="event.stopPropagation();">
+        <h3><i class="fas fa-lock" style="color:#f59e0b;margin-right:6px;"></i> <span id="passwordModalTitle">Set Password</span></h3>
+        <p style="font-size:11px;color:#94a3b8;margin-bottom:14px;text-align:center;">Anyone opening or downloading this file/folder will be asked to enter this password.</p>
+        <form method="POST" action="/dashboard.php" id="passwordForm" onsubmit="return handlePasswordSubmit(event)">
+            <input type="hidden" name="parent_id" value="<%= currentFolder %>">
+            <input type="hidden" name="action_type" value="set_password">
+            <input type="hidden" name="item_kind" id="passwordItemKind" value="">
+            <input type="hidden" name="item_id" id="passwordItemId" value="">
+            <input type="hidden" name="remove_password" id="passwordRemoveFlag" value="0">
+            <div class="field">
+                <label id="passwordLabel">Password</label>
+                <input type="text" name="item_password" id="passwordInput" autocomplete="off" placeholder="Enter password...">
+            </div>
+            <div class="actions" style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button type="button" class="cancel" onclick="closeModal('passwordModal')"><i class="fas fa-xmark"></i> Cancel</button>
+                <button type="button" id="removePasswordBtn" class="cancel" style="background:#451a1a;border-color:#7f1d1d;color:#fca5a5;display:none;" onclick="removeCurrentPassword()"><i class="fas fa-unlock"></i> Remove</button>
+                <button type="submit" class="confirm" id="savePasswordBtn"><i class="fas fa-check"></i> Save Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="move-select" id="moveBox">
+    <h4><i class="fas fa-folder-tree"></i> <span id="moveTitle">Move File</span></h4>
+    <form method="POST" action="/dashboard.php" id="moveForm">
+        <input type="hidden" name="file_id" id="moveFileId">
+        <input type="hidden" name="folder_id" id="moveFolderId">
+        <input type="hidden" name="action_type" id="moveActionType" value="move_file">
+        <select name="target_folder" id="moveTarget">
+            <option value="0">📁 Root</option>
+            <% Object.values(moveFolders).forEach(mf => { %>
+                <option value="<%= mf.id %>"><%= mf.name %></option>
+            <% }); %>
+        </select>
+        <button type="button" class="new-destination" onclick="openDestinationFolderModal('move')"><i class="fas fa-folder-plus"></i> Create New Folder</button>
+        <div class="move-actions">
+            <button type="button" class="move-cancel" onclick="closeMove()">Cancel</button>
+            <button type="submit" id="moveSubmitBtn" class="move-ok">Move Here</button>
+        </div>
+    </form>
+</div>
+
+<div class="move-select" id="bulkMoveBox">
+    <h4><i class="fas fa-folder-tree"></i> <span id="bulkMoveTitle">Move Selected</span></h4>
+    <select id="bulkMoveTarget">
+        <option value="0">📁 Root</option>
+        <% Object.values(moveFolders).forEach(mf => { %>
+            <option value="<%= mf.id %>"><%= mf.name %></option>
+        <% }); %>
+    </select>
+    <button type="button" class="new-destination" onclick="openDestinationFolderModal('bulk')"><i class="fas fa-folder-plus"></i> Create New Folder</button>
+    <div class="move-actions"><button type="button" class="move-cancel" onclick="closeBulkMove()">Cancel</button><button type="button" class="move-ok" id="bulkDestinationSubmit" onclick="submitBulkMove()">Move Here</button></div>
+</div>
+
+<form method="POST" action="/dashboard.php" id="bulkForm" style="display:none">
+    <input type="hidden" name="bulk_action" id="bulkAction">
+    <input type="hidden" name="selected_items" id="bulkSelected">
+    <input type="hidden" name="target_folder" id="bulkTarget">
+    <input type="hidden" name="current_folder" value="<%= currentFolder %>">
+</form>
+
+<script>
+    let selectionMode=false;
+    let longPressTimer=null;
+    let selected=new Map();
+    let destinationModalMode='move';
+
+    function enableSelection(e, el){
+        if(e) e.preventDefault();
+        selectionMode=true;
+        document.querySelector('.content').classList.add('selection-mode');
+        syncSelectionItem(el, true);
+        updateSelectionUI();
+        return false;
+    }
+    function startLongPress(el){
+        clearTimeout(longPressTimer);
+        longPressTimer=setTimeout(()=>enableSelection(null,el),550);
+    }
+    function cancelLongPress(){clearTimeout(longPressTimer);}
+    
+    document.querySelectorAll('.content .item').forEach(el=>{
+        el.addEventListener('pointerdown',function(e){
+            if(e.pointerType==='mouse' && e.button!==0) return;
+            startLongPress(el);
+        });
+        ['pointerup','pointercancel','pointerleave'].forEach(evt=>el.addEventListener(evt,cancelLongPress));
+        el.addEventListener('contextmenu',function(e){
+            e.preventDefault();
+            cancelLongPress();
+            enableSelection(e,el);
+        });
+    });
+
+    document.addEventListener('click',function(e){
+        if(!selectionMode) return;
+        if(
+            e.target.closest('.item') ||
+            e.target.closest('#selectionBar') ||
+            e.target.closest('#bulkMenu') ||
+            e.target.closest('.move-select') ||
+            e.target.closest('.modal')
+        ) return;
+        clearSelection();
+    });
+
+    try {
+        const sidParam = new URLSearchParams(location.search).get('sid');
+        if (sidParam) sessionStorage.setItem('mf_sid', sidParam);
+    } catch(e) {}
+
+    function itemClick(el,e,url){
+        if(selectionMode){
+            e.preventDefault();
+            const cb=el.querySelector('.select-box input'); cb.checked=!cb.checked; updateSelection(cb);
+        } else {
+            try {
+                const sid = new URLSearchParams(location.search).get('sid') || sessionStorage.getItem('mf_sid');
+                if (sid && !url.includes('sid=')) {
+                    url += (url.includes('?') ? '&' : '?') + 'sid=' + encodeURIComponent(sid);
+                }
+            } catch(e) {}
+            location.href=url;
+        }
+    }
+    function syncSelectionItem(el,on){
+        const key=el.dataset.kind+':'+el.dataset.id;
+        const cb=el.querySelector('.select-box input');
+        if(cb) cb.checked=on;
+        if(on) selected.set(key,{kind:el.dataset.kind,id:el.dataset.id,name:el.dataset.name,type:el.dataset.type});
+        else selected.delete(key);
+        el.classList.toggle('selected',on);
+    }
+    function updateSelection(cb){
+        const el=cb.closest('.item');
+        if(!selectionMode){selectionMode=true;document.querySelector('.content').classList.add('selection-mode');}
+        syncSelectionItem(el,cb.checked); updateSelectionUI();
+    }
+    function selectAllVisible(){
+        const items=[...document.querySelectorAll('.content .item[data-id]')];
+        const allSelected=items.length && items.every(el=>selected.has(el.dataset.kind+':'+el.dataset.id));
+        items.forEach(el=>syncSelectionItem(el,!allSelected)); updateSelectionUI();
+    }
+    function clearSelection(){
+        selected.clear(); document.querySelectorAll('.item.selected').forEach(el=>el.classList.remove('selected'));
+        document.querySelectorAll('.select-box input').forEach(cb=>cb.checked=false);
+        selectionMode=false; document.querySelector('.content').classList.remove('selection-mode');
+        document.getElementById('selectionBar').classList.remove('show'); document.getElementById('bulkMenu').classList.remove('show');
+    }
+    function updateSelectionUI(){
+        document.getElementById('selectedCount').textContent=selected.size;
+        if(selected.size===0){
+            selectionMode=false;
+            document.querySelector('.content').classList.remove('selection-mode');
+            document.getElementById('selectionBar').classList.remove('show');
+        } else {
+            document.getElementById('selectionBar').classList.add('show');
+        }
+    }
+    function toggleBulkMenu(){document.getElementById('bulkMenu').classList.toggle('show');}
+    function selectedPayload(){return JSON.stringify([...selected.values()].map(x=>({kind:x.kind,id:x.id})));}
+    function submitBulk(action,target=''){
+        if(!selected.size) return;
+        document.getElementById('bulkAction').value=action;
+        document.getElementById('bulkSelected').value=selectedPayload();
+        document.getElementById('bulkTarget').value=target;
+        document.getElementById('bulkForm').submit();
+    }
+    function bulkAction(action){
+        document.getElementById('bulkMenu').classList.remove('show');
+        if(action==='delete'){
+            if(confirm('Delete '+selected.size+' item(s)?')) submitBulk('delete');
+        } else if(action==='move' || action==='copy'){
+            document.getElementById('bulkMoveTitle').textContent=(action==='copy'?'Copy':'Move')+' Selected ('+selected.size+')';
+            document.getElementById('bulkDestinationSubmit').textContent=(action==='copy'?'Copy Here':'Move Here');
+            document.getElementById('bulkDestinationSubmit').dataset.action=action;
+            document.getElementById('bulkMoveBox').classList.add('show');
+        }
+    }
+    function closeBulkMove(){document.getElementById('bulkMoveBox').classList.remove('show');}
+    function submitBulkMove(){
+        const target=document.getElementById('bulkMoveTarget').value;
+        const action=document.getElementById('bulkDestinationSubmit').dataset.action || 'move';
+        submitBulk(action,target);
+    }
+    function toggleMenu(btn){
+        const m=btn.nextElementSibling;
+        const open=m.classList.contains('show');
+        document.querySelectorAll('.item-menu.show').forEach(x=>x.classList.remove('show'));
+        if(!open) m.classList.add('show');
+    }
+    function closeAllMenus(e){
+        if (e && e.stopPropagation) e.stopPropagation();
+        document.querySelectorAll('.item-menu.show').forEach(x=>x.classList.remove('show'));
+    }
+    document.addEventListener('click',function(e){
+        if(!e.target.closest('.actions')) closeAllMenus();
+    });
+    function openModal(id){
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.add('show');
+            el.style.display = 'flex';
+        }
+    }
+    function closeModal(id){
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.remove('show');
+            el.style.display = 'none';
+        }
+    }
+    function openFolderModal(){
+        closeAllMenus();
+        const input = document.getElementById('folderNameInput');
+        if (input) input.value = '';
+        openModal('folderModal');
+    }
+
+    async function handleFolderCreate(e){
+        if (e && e.preventDefault) e.preventDefault();
+        const input = document.getElementById('folderNameInput');
+        const name = input ? input.value.trim() : '';
+        if (!name) {
+            alert('Please enter a folder name');
+            return false;
+        }
+
+        // Close modal immediately so it disappears as soon as Save is clicked
+        closeModal('folderModal');
+
+        const fd = new FormData();
+        fd.append('ajax_create_folder', '1');
+        fd.append('folder_name', name);
+        fd.append('parent_id', '<%= currentFolder %>');
+
+        try {
+            const res = await fetch('/dashboard.php', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data && data.ok) {
+                window.location.reload();
+            } else {
+                alert((data && data.message) || 'Error creating folder');
+            }
+        } catch (err) {
+            const form = document.getElementById('createFolderForm');
+            if (form) form.submit();
+        }
+        return false;
+    }
+
+    function handleRenameSubmit(e){
+        const input = document.getElementById('renameInput');
+        const name = input ? input.value.trim() : '';
+        if (!name) {
+            if (e && e.preventDefault) e.preventDefault();
+            alert('Please enter a valid name');
+            return false;
+        }
+        // Close modal immediately so it disappears as soon as Save is clicked
+        closeModal('renameModal');
+        return true;
+    }
+
+    function triggerRename(target, evt){
+        if (evt && evt.stopPropagation) evt.stopPropagation();
+        if (evt && evt.preventDefault) evt.preventDefault();
+        
+        // Hide any open dropdowns
+        document.querySelectorAll('.item-menu.show').forEach(x=>x.classList.remove('show'));
+
+        let kind = '';
+        let id = '';
+        let name = '';
+
+        if (target && target.getAttribute) {
+            kind = target.getAttribute('data-kind') || '';
+            id = target.getAttribute('data-id') || '';
+            const encName = target.getAttribute('data-name');
+            if (encName) {
+                try { name = decodeURIComponent(encName); } catch(e) { name = encName; }
+            }
+            if (!kind || !id) {
+                const item = target.closest('.item');
+                if (item) {
+                    kind = kind || item.getAttribute('data-kind') || '';
+                    id = id || item.getAttribute('data-id') || '';
+                    name = name || item.getAttribute('data-name') || '';
+                }
+            }
+        }
+
+        const modal = document.getElementById('renameModal');
+        if (modal) {
+            document.getElementById('renameItemKind').value = kind;
+            document.getElementById('renameItemId').value = id;
+            document.getElementById('renameTitle').textContent = kind === 'file' ? 'Rename File' : 'Rename Folder';
+            document.getElementById('renameLabel').textContent = kind === 'file' ? 'File Name' : 'Folder Name';
+            const input = document.getElementById('renameInput');
+            input.value = name || '';
+            openModal('renameModal');
+        } else {
+            // Native fallback prompt
+            const promptVal = prompt((kind === 'file' ? 'Rename file' : 'Rename folder') + ' to:', name);
+            if (promptVal && promptVal.trim() && promptVal.trim() !== name) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/dashboard.php';
+                form.innerHTML = `
+                    <input type="hidden" name="parent_id" value="<%= currentFolder %>">
+                    <input type="hidden" name="action_type" value="rename">
+                    <input type="hidden" name="item_kind" value="${kind}">
+                    <input type="hidden" name="item_id" value="${id}">
+                    <input type="hidden" name="new_name" value="${promptVal.trim().replace(/"/g, '&quot;')}">
+                `;
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+    }
+    window.triggerRename = triggerRename;
+    window.openRename = triggerRename;
+
+    // Attach document-level fallback listener for rename clicks
+    document.addEventListener('click', function(e){
+        const renameBtn = e.target.closest('.rename-action-btn');
+        if (renameBtn) {
+            triggerRename(renameBtn, e);
+        }
+    });
+
+    function openPasswordModal(kind, id, hasPassword) {
+        closeAllMenus();
+        document.getElementById('passwordItemKind').value = kind;
+        document.getElementById('passwordItemId').value = id;
+        document.getElementById('passwordRemoveFlag').value = '0';
+        document.getElementById('passwordInput').value = '';
+        const modalTitle = document.getElementById('passwordModalTitle');
+        const removeBtn = document.getElementById('removePasswordBtn');
+        if (hasPassword === '1') {
+            if (modalTitle) modalTitle.textContent = 'Change / Remove Password';
+            if (removeBtn) removeBtn.style.display = 'inline-flex';
+        } else {
+            if (modalTitle) modalTitle.textContent = 'Set Password';
+            if (removeBtn) removeBtn.style.display = 'none';
+        }
+        openModal('passwordModal');
+    }
+    window.openPasswordModal = openPasswordModal;
+
+    function removeCurrentPassword() {
+        document.getElementById('passwordRemoveFlag').value = '1';
+        document.getElementById('passwordInput').value = '';
+        closeModal('passwordModal');
+        document.getElementById('passwordForm').submit();
+    }
+    window.removeCurrentPassword = removeCurrentPassword;
+
+    function handlePasswordSubmit(e) {
+        const input = document.getElementById('passwordInput');
+        const val = input ? input.value.trim() : '';
+        if (!val && document.getElementById('passwordRemoveFlag').value !== '1') {
+            if (e && e.preventDefault) e.preventDefault();
+            alert('Please enter a password or click Remove');
+            return false;
+        }
+        closeModal('passwordModal');
+        return true;
+    }
+    window.handlePasswordSubmit = handlePasswordSubmit;
+
+    function copyFolderLink(fid) {
+        closeAllMenus();
+        const url = window.location.origin + '/share.php?folder=' + encodeURIComponent(fid);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Folder share link copied to clipboard!');
+            }).catch(() => {
+                prompt('Folder share link:', url);
+            });
+        } else {
+            prompt('Folder share link:', url);
+        }
+    }
+    window.copyFolderLink = copyFolderLink;
+
+    function copyFolderHostLink(fid) {
+        closeAllMenus();
+        const url = window.location.origin + '/folder_download.php?id=' + encodeURIComponent(fid);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Folder Host Link copied! Anyone opening this link will directly download the folder as a ZIP file.');
+            }).catch(() => {
+                prompt('Folder Host Link (Direct ZIP Download):', url);
+            });
+        } else {
+            prompt('Folder Host Link (Direct ZIP Download):', url);
+        }
+    }
+    window.copyFolderHostLink = copyFolderHostLink;
+
+    function copyFileLink(fid) {
+        closeAllMenus();
+        const url = window.location.origin + '/share.php?id=' + encodeURIComponent(fid);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('File share link copied to clipboard!');
+            }).catch(() => {
+                prompt('File share link:', url);
+            });
+        } else {
+            prompt('File share link:', url);
+        }
+    }
+    window.copyFileLink = copyFileLink;
+
+    function copyFileHostLink(fid) {
+        closeAllMenus();
+        const url = window.location.origin + '/download.php?id=' + encodeURIComponent(fid);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Host Link copied! Anyone opening this link will directly download the file (video, audio, photo, etc.).');
+            }).catch(() => {
+                prompt('Host Link (Direct Download):', url);
+            });
+        } else {
+            prompt('Host Link (Direct Download):', url);
+        }
+    }
+    window.copyFileHostLink = copyFileHostLink;
+
+    document.addEventListener('keydown', function(e){
+        if (e.key === 'Escape') {
+            closeModal('renameModal');
+            closeModal('folderModal');
+            closeModal('passwordModal');
+            closeModal('destinationFolderModal');
+            closeMove();
+        }
+    });
+    function openDestinationFolderModal(mode){
+        destinationModalMode=mode;
+        document.getElementById('destinationFolderName').value='';
+        openModal('destinationFolderModal');
+    }
+    async function createDestinationFolder(){
+        const name=document.getElementById('destinationFolderName').value.trim();
+        if(!name) return;
+        const fd=new FormData();
+        fd.append('ajax_create_folder','1');
+        fd.append('folder_name',name);
+        fd.append('parent_id','<%= currentFolder %>');
+        try{
+            const res=await fetch('/dashboard.php',{method:'POST',body:fd});
+            const data=await res.json();
+            if(data && data.ok){
+                const opt=document.createElement('option');
+                opt.value=data.id;
+                opt.textContent=data.name;
+                opt.selected=true;
+                document.getElementById('moveTarget').appendChild(opt);
+                const opt2=opt.cloneNode(true);
+                opt2.selected=true;
+                document.getElementById('bulkMoveTarget').appendChild(opt2);
+                closeModal('destinationFolderModal');
+            } else {
+                alert((data && data.message)||'Could not create folder.');
+            }
+        }catch(err){alert('Network error.');}
+    }
+    function openMove(kind,id,parentId){
+        document.querySelectorAll('.item-menu.show').forEach(x=>x.classList.remove('show'));
+        document.getElementById('moveFileId').value=kind==='file'?id:'';
+        document.getElementById('moveFolderId').value=kind==='folder'?id:'';
+        document.getElementById('moveActionType').value=kind==='file'?'move_file':'move_folder';
+        document.getElementById('moveTitle').textContent='Move '+(kind==='file'?'File':'Folder');
+        document.getElementById('moveSubmitBtn').textContent='Move Here';
+        document.getElementById('moveTarget').value=parentId||'0';
+        document.getElementById('moveBox').classList.add('show');
+    }
+    function openCopy(kind,id,parentId){
+        document.querySelectorAll('.item-menu.show').forEach(x=>x.classList.remove('show'));
+        document.getElementById('moveFileId').value=kind==='file'?id:'';
+        document.getElementById('moveFolderId').value=kind==='folder'?id:'';
+        document.getElementById('moveActionType').value=kind==='file'?'copy_file':'copy_folder';
+        document.getElementById('moveTitle').textContent='Copy '+(kind==='file'?'File':'Folder');
+        document.getElementById('moveSubmitBtn').textContent='Copy Here';
+        document.getElementById('moveTarget').value=parentId||'0';
+        document.getElementById('moveBox').classList.add('show');
+    }
+    function closeMove(){document.getElementById('moveBox').classList.remove('show');}
+    function copyFolderLink(fid){
+        const url=window.location.origin+'/folder_download.php?id='+encodeURIComponent(fid);
+        navigator.clipboard.writeText(url).then(()=>{
+            alert('Folder download link copied!');
+        }).catch(()=>{
+            prompt('Copy folder download link:', url);
+        });
+    }
+
+    // Clean up any stale client-side backup keys to prevent conflicts
+    try {
+        const currentUserId = <%- JSON.stringify(user.id) %>;
+        localStorage.removeItem('ckm_meta_folders_' + currentUserId);
+        localStorage.removeItem('ckm_meta_files_' + currentUserId);
+    } catch (e) {}
+</script>
+</body>
+</html>

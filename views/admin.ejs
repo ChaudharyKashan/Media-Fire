@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Chaudhary Kashan Meyo">
+    <meta name="theme-color" content="#0a0e17">
+    <title>Chaudhary Kashan Meyo (MediaFire)</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png?v=20260913-2">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=20260913-2">
+    <link rel="shortcut icon" href="/favicon.ico?v=20260913-2">
+    <link rel="apple-touch-icon" href="/favicon.png?v=20260913-2">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Segoe UI',sans-serif;background:#0a0e17;color:#f1f5f9;font-size:13px;}
+        
+        .header{background:#111827;border-bottom:1px solid #1e293b;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;}
+        .header h2{font-size:16px;color:#3b82f6;}
+        .header a{color:#94a3b8;text-decoration:none;font-size:12px;}
+        .header a:hover{color:#f1f5f9;}
+        
+        .layout{display:flex;min-height:calc(100vh - 50px);}
+        .sidebar{width:160px;min-width:160px;background:#111827;border-right:1px solid #1e293b;padding:8px 6px;}
+        .sidebar a{display:flex;align-items:center;gap:7px;padding:8px 12px;color:#94a3b8;text-decoration:none;font-size:12px;border-radius:5px;}
+        .sidebar a:hover{background:#0a0e17;color:#f1f5f9;}
+        .sidebar a.active{background:rgba(59,130,246,0.1);color:#3b82f6;border-left:2px solid #3b82f6;}
+        .sidebar a i{width:16px;text-align:center;}
+        
+        .main{flex:1;padding:16px 20px;overflow-x:auto;}
+        
+        .alert{background:rgba(34,197,94,0.1);color:#22c55e;padding:8px 14px;border-radius:6px;margin-bottom:12px;font-size:11px;border:1px solid rgba(34,197,94,0.3);}
+        .alert-error{background:rgba(239,68,68,0.1);color:#ef4444;border-color:rgba(239,68,68,0.3);}
+        
+        .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:16px;}
+        .stat{background:#111827;border:1px solid #1e293b;border-radius:8px;padding:14px;text-align:center;}
+        .stat .num{font-size:22px;font-weight:700;color:#3b82f6;}
+        .stat .label{font-size:9px;color:#64748b;text-transform:uppercase;margin-top:2px;}
+        
+        .card{background:#111827;border:1px solid #1e293b;border-radius:10px;padding:16px;margin-bottom:12px;}
+        .card h3{font-size:14px;margin-bottom:10px;color:#3b82f6;}
+        
+        .table-wrap{overflow-x:auto;}
+        table{width:100%;border-collapse:collapse;min-width:450px;}
+        th{background:#0a0e17;padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;color:#64748b;border-bottom:1px solid #1e293b;}
+        td{padding:8px 10px;border-bottom:1px solid #1e293b;font-size:11px;}
+        tr:hover{background:#0a0e17;}
+        
+        .badge{padding:2px 8px;border-radius:10px;font-size:9px;font-weight:600;}
+        .badge-green{background:rgba(34,197,94,0.15);color:#22c55e;}
+        .badge-red{background:rgba(239,68,68,0.15);color:#ef4444;}
+        
+        .btn{padding:4px 10px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;text-decoration:none;border:none;display:inline-block;}
+        .btn-red{background:#ef4444;color:#fff;}
+        .btn-blue{background:#3b82f6;color:#fff;}
+        .btn-outline{background:transparent;border:1px solid #1e293b;color:#94a3b8;}
+        
+        .form-group{margin-bottom:10px;}
+        .form-group label{display:block;font-size:10px;color:#94a3b8;margin-bottom:3px;font-weight:600;}
+        .form-group input{width:100%;padding:8px 10px;background:#0a0e17;border:1px solid #1e293b;border-radius:5px;color:#f1f5f9;font-size:12px;outline:none;}
+        .form-group input:focus{border-color:#3b82f6;}
+        
+        @media(max-width:768px){.sidebar{display:none;}.layout{flex-direction:column;}}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>CKM Admin Files</h2>
+        <div>
+            <a href="/" target="_blank"><i class="fas fa-external-link-alt"></i> Site</a>
+            <a href="/admin.php?logout=1" style="color:#ef4444;margin-left:12px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </div>
+    
+    <div class="layout">
+        <div class="sidebar">
+            <a href="/admin.php?section=dashboard" class="<%= section==='dashboard'?'active':'' %>"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/admin.php?section=users" class="<%= section==='users'?'active':'' %>"><i class="fas fa-users"></i> Users</a>
+            <a href="/admin.php?section=files" class="<%= section==='files'?'active':'' %>"><i class="fas fa-file-alt"></i> Files</a>
+            <a href="/admin.php?section=settings" class="<%= section==='settings'?'active':'' %>"><i class="fas fa-cog"></i> Settings</a>
+            <a href="/admin.php?section=profile" class="<%= section==='profile'?'active':'' %>"><i class="fas fa-user-shield"></i> Profile</a>
+        </div>
+        
+        <div class="main">
+            <% if (msg) { %>
+                <div class="alert"><i class="fas fa-check-circle"></i> <%= msg %></div>
+            <% } %>
+            <% if (error) { %>
+                <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <%= error %></div>
+            <% } %>
+            
+            <% if (section === 'dashboard') { %>
+                <h3 style="margin-bottom:14px;">Dashboard</h3>
+                <div class="stats">
+                    <div class="stat"><div class="num"><%= users.length %></div><div class="label">Users</div></div>
+                    <div class="stat"><div class="num"><%= activeUsers %></div><div class="label">Active</div></div>
+                    <div class="stat"><div class="num"><%= Object.keys(allFiles).length %></div><div class="label">Files</div></div>
+                    <div class="stat"><div class="num"><%= totalStorage %></div><div class="label">Storage</div></div>
+                </div>
+                <div class="card">
+                    <h3>Info</h3>
+                    <p style="color:#94a3b8;font-size:12px;">Site: <b style="color:#f1f5f9;"><%= settings.site_name || 'CKM Files' %></b></p>
+                    <p style="color:#94a3b8;font-size:12px;">Admin: <b style="color:#f1f5f9;"><%= adminUser %></b></p>
+                </div>
+            
+            <% } else if (section === 'users') { %>
+                <h3 style="margin-bottom:10px;">Users (<%= users.length %>)</h3>
+                <div class="card">
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Username</th><th>Email</th><th>Files</th><th>Storage</th><th>Status</th><th>Action</th></tr></thead>
+                            <tbody>
+                                <% users.slice().reverse().forEach(u => { 
+                                    let uf = 0;
+                                    Object.values(allFiles).forEach(f => { if(f.user_id === u.id) uf++; });
+                                %>
+                                <tr>
+                                    <td><b><%= u.username %></b></td>
+                                    <td style="color:#94a3b8;"><%= u.email %></td>
+                                    <td><%= uf %></td>
+                                    <td><%= formatBytes(u.storage_used || 0) %></td>
+                                    <td><span class="badge <%= (u.status || 'active') === 'active' ? 'badge-green' : 'badge-red' %>"><%= u.status || 'active' %></span></td>
+                                    <td><a href="/admin.php?del_user=<%= u.id %>" class="btn btn-red" onclick="return confirm('Delete user?')">Delete</a></td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            
+            <% } else if (section === 'files') { %>
+                <h3 style="margin-bottom:10px;">Files (<%= fileList.length %>)</h3>
+                <div class="card">
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>File</th><th>Username</th><th>Email</th><th>Size</th><th>DL</th><th>Action</th></tr></thead>
+                            <tbody>
+                                <% fileList.forEach(item => { %>
+                                <tr>
+                                    <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= item.original_name %></td>
+                                    <td><%= item.ownerUsername %></td>
+                                    <td style="color:#94a3b8;"><%= item.ownerEmail %></td>
+                                    <td><%= formatBytes(item.size) %></td>
+                                    <td><%= item.downloads || 0 %></td>
+                                    <td>
+                                        <a href="/share.php?id=<%= item.id %>" target="_blank" class="btn btn-blue">View</a>
+                                        <a href="/admin.php?hide_file=<%= item.id %>" class="btn btn-outline" onclick="return confirm('Delete for me? The file will remain available to its owner and other users.')">Delete for Me</a>
+                                        <a href="/admin.php?del_members=<%= item.id %>" class="btn btn-outline" onclick="return confirm('Delete for members? The file will disappear from the member dashboard but the shared link will remain available.')">Delete for Members</a>
+                                        <a href="/admin.php?del_file=<%= item.id %>" class="btn btn-red" onclick="return confirm('Delete for everyone? This permanently removes the file from the database, server, member dashboard and shared link.')">Delete for Everyone</a>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            
+            <% } else if (section === 'settings') { %>
+                <div class="card" style="max-width:450px;">
+                    <h3>Settings</h3>
+                    <form method="POST" action="/admin.php">
+                        <input type="hidden" name="save_settings" value="1">
+                        <div class="form-group">
+                            <label>Site Name</label>
+                            <input type="text" name="site_name" value="<%= settings.site_name || 'CKM Files' %>">
+                        </div>
+                        <button type="submit" class="btn btn-blue" style="padding:8px 16px;font-size:12px;margin-top:4px;">Save</button>
+                    </form>
+                </div>
+            
+            <% } else if (section === 'profile') { %>
+                <div class="card" style="max-width:440px;">
+                    <h3>Admin Account Settings</h3>
+                    <p style="color:#94a3b8;font-size:12px;margin-bottom:14px;">Logged in as: <b style="color:#60a5fa;"><%= adminUser %></b></p>
+                    <form method="POST" action="/admin.php">
+                        <input type="hidden" name="update_admin_profile" value="1">
+                        
+                        <div class="form-group">
+                            <label>Admin Username</label>
+                            <input type="text" name="new_username" value="<%= adminUser %>" required autocomplete="username">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Current Password <span style="color:#ef4444;">*</span> <small style="color:#94a3b8;font-weight:normal;">(required to save changes)</small></label>
+                            <input type="password" name="current_password" required placeholder="Enter current password" autocomplete="current-password">
+                        </div>
+
+                        <hr style="border:0;border-top:1px solid #1e293b;margin:16px 0;">
+
+                        <div class="form-group">
+                            <label>New Password <small style="color:#64748b;font-weight:normal;">(optional, leave blank to keep unchanged)</small></label>
+                            <input type="password" name="new_password" minlength="4" placeholder="Enter new password" autocomplete="new-password">
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm New Password</label>
+                            <input type="password" name="confirm_password" placeholder="Confirm new password" autocomplete="new-password">
+                        </div>
+
+                        <button type="submit" class="btn btn-blue" style="padding:10px 20px;font-size:12px;margin-top:4px;">Save Changes</button>
+                    </form>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</body>
+</html>

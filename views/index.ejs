@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="description" content="Chaudhary Kashan Meyo (MediaFire) — a fast and secure file and folder sharing platform for uploading, organizing, sharing and downloading files.">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Chaudhary Kashan Meyo">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png?v=20260913-2">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=20260913-2">
+    <link rel="shortcut icon" href="/favicon.ico?v=20260913-2">
+    <link rel="apple-touch-icon" href="/favicon.png?v=20260913-2">
+    <meta name="theme-color" content="#0a0e17">
+    <title><%= siteName %> - Sign In & Secure Storage</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0e17;color:#f1f5f9;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+        .container{width:100%;max-width:400px;}
+        .brand{text-align:center;margin-bottom:24px;}
+        .brand .logo{font-size:32px;font-weight:800;color:#3b82f6;}
+        .brand .sub{font-size:13px;color:#64748b;margin-top:4px;}
+        .card{background:#111827;border:1px solid #1e293b;border-radius:14px;padding:28px 22px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.5);}
+        .tabs{display:flex;gap:6px;margin-bottom:20px;background:#0a0e17;border-radius:8px;padding:4px;}
+        .tab{flex:1;padding:10px;text-align:center;color:#94a3b8;font-size:13px;font-weight:600;cursor:pointer;border-radius:6px;border:none;background:none;transition:all 0.2s;}
+        .tab.active{background:#3b82f6;color:#fff;}
+        .field{margin-bottom:16px;}
+        .field label{display:block;font-size:12px;color:#94a3b8;margin-bottom:6px;font-weight:600;}
+        .field input{width:100%;padding:10px 12px;background:#0a0e17;border:1px solid #1e293b;border-radius:8px;color:#f1f5f9;font-size:14px;outline:none;transition:border-color 0.2s;}
+        .field input:focus{border-color:#3b82f6;}
+        .password-wrapper{position:relative;display:flex;align-items:center;}
+        .password-wrapper input{padding-right:42px;}
+        .eye-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer;padding:6px 8px;font-size:15px;display:flex;align-items:center;justify-content:center;transition:color 0.2s;line-height:1;}
+        .eye-btn:hover{color:#3b82f6;}
+        .btn{width:100%;padding:12px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s, opacity 0.2s;}
+        .btn:hover{background:#2563eb;}
+        .alert{padding:12px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+        .alert-error{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;}
+        .alert-success{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);color:#86efac;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="brand">
+            <div class="logo"><%= siteName %></div>
+            <div class="sub">Secure Cloud Storage</div>
+        </div>
+        <div class="card">
+            <% if (error) { %>
+                <div class="alert alert-error">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span><%= error %></span>
+                </div>
+            <% } %>
+            <% if (success) { %>
+                <div class="alert alert-success">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span><%= success %></span>
+                </div>
+            <% } %>
+            
+            <div class="tabs">
+                <button type="button" class="tab <%= activeTab === 'login' ? 'active' : '' %>" id="tab-login" onclick="switchTab('login')">Sign In</button>
+                <button type="button" class="tab <%= activeTab === 'register' ? 'active' : '' %>" id="tab-register" onclick="switchTab('register')">Register</button>
+            </div>
+            
+            <!-- Sign In Form -->
+            <form method="POST" action="/index.php" id="form-login" style="display:<%= activeTab === 'login' ? 'block' : 'none' %>;" onsubmit="return handleFormSubmit(this, 'Signing in...')">
+                <input type="hidden" name="action" value="login">
+                <div class="field">
+                    <label>Email or Username</label>
+                    <input type="text" name="login_input" value="<%= typeof enteredLogin !== 'undefined' ? enteredLogin : '' %>" placeholder="Enter email or username" required autocomplete="username" autofocus>
+                </div>
+                <div class="field">
+                    <label>Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="login_pass" name="login_pass" placeholder="Enter password" required autocomplete="current-password">
+                        <button type="button" class="eye-btn" onclick="togglePasswordVisibility('login_pass', this)" tabindex="-1" title="Show / Hide Password">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn" id="btn-login">
+                    <span>Sign In</span>
+                </button>
+            </form>
+            
+            <!-- Register Form -->
+            <form method="POST" action="/index.php" id="form-register" style="display:<%= activeTab === 'register' ? 'block' : 'none' %>;" onsubmit="return handleFormSubmit(this, 'Creating account...')">
+                <input type="hidden" name="action" value="register">
+                <div class="field">
+                    <label>Username</label>
+                    <input type="text" name="username" placeholder="Choose username" required autocomplete="username">
+                </div>
+                <div class="field">
+                    <label>Email</label>
+                    <input type="email" name="email" placeholder="Enter email" required autocomplete="email">
+                </div>
+                <div class="field">
+                    <label>Password (min 4 chars)</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="reg_pass" name="password" placeholder="Create password" required minlength="4" autocomplete="new-password">
+                        <button type="button" class="eye-btn" onclick="togglePasswordVisibility('reg_pass', this)" tabindex="-1" title="Show / Hide Password">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn" id="btn-register">
+                    <span>Create Account</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function switchTab(t) {
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegister = document.getElementById('tab-register');
+            const formLogin = document.getElementById('form-login');
+            const formRegister = document.getElementById('form-register');
+
+            if (t === 'login') {
+                if (tabLogin) tabLogin.classList.add('active');
+                if (tabRegister) tabRegister.classList.remove('active');
+                if (formLogin) formLogin.style.display = 'block';
+                if (formRegister) formRegister.style.display = 'none';
+            } else {
+                if (tabRegister) tabRegister.classList.add('active');
+                if (tabLogin) tabLogin.classList.remove('active');
+                if (formLogin) formLogin.style.display = 'none';
+                if (formRegister) formRegister.style.display = 'block';
+            }
+        }
+
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+                btn.style.color = '#3b82f6';
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+                btn.style.color = '#64748b';
+            }
+        }
+
+        function handleFormSubmit(form, loadingText) {
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>' + loadingText + '</span>';
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>

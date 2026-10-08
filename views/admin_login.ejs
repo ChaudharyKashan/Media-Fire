@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png?v=20260913-2">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=20260913-2">
+    <link rel="shortcut icon" href="/favicon.ico?v=20260913-2">
+    <link rel="apple-touch-icon" href="/favicon.png?v=20260913-2">
+    <meta name="description" content="Chaudhary Kashan Meyo (MediaFire) — secure file and folder sharing platform for uploading, organizing, sharing and downloading files.">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Chaudhary Kashan Meyo">
+    <meta name="theme-color" content="#0a0e17">
+    <title>Chaudhary Kashan Meyo (MediaFire) — Admin Login</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Segoe UI',sans-serif;background:#0a0e17;color:#f1f5f9;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+        .box{background:#111827;border:1px solid #1e293b;border-radius:14px;padding:32px 24px;width:100%;max-width:360px;text-align:center;box-shadow:0 10px 25px -5px rgba(0,0,0,0.5);}
+        .box h3{font-size:18px;margin-bottom:20px;color:#3b82f6;}
+        .field{margin-bottom:12px;position:relative;text-align:left;}
+        .field input{width:100%;padding:12px 14px;background:#0a0e17;border:1px solid #1e293b;border-radius:8px;color:#f1f5f9;font-size:14px;outline:none;}
+        .field input:focus{border-color:#3b82f6;}
+        .password-field input{padding-right:42px;}
+        .eye-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer;padding:6px;font-size:14px;display:flex;align-items:center;justify-content:center;}
+        .eye-btn:hover{color:#3b82f6;}
+        .box button[type="submit"]{width:100%;padding:13px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px;}
+        .box button[type="submit"]:hover{opacity:0.9;}
+        .err{color:#ef4444;font-size:13px;margin-bottom:12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);padding:8px 10px;border-radius:6px;}
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h3><i class="fas fa-shield-alt"></i> Admin Panel</h3>
+        <% if (error) { %><p class="err"><i class="fa-solid fa-triangle-exclamation"></i> <%= error %></p><% } %>
+        <form method="POST" action="/admin.php">
+            <input type="hidden" name="admin_login" value="1">
+            <div class="field">
+                <input type="text" name="au" placeholder="Username" required autocomplete="username">
+            </div>
+            <div class="field password-field">
+                <input type="password" id="admin_pass" name="ap" placeholder="Password" required autocomplete="current-password">
+                <button type="button" class="eye-btn" onclick="togglePass('admin_pass', this)" tabindex="-1" title="Show / Hide Password">
+                    <i class="fa-solid fa-eye"></i>
+                </button>
+            </div>
+            <button type="submit">Sign In</button>
+        </form>
+    </div>
+
+    <script>
+        function togglePass(id, btn) {
+            const el = document.getElementById(id);
+            const icon = btn.querySelector('i');
+            if (el.type === 'password') {
+                el.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+                btn.style.color = '#3b82f6';
+            } else {
+                el.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+                btn.style.color = '#64748b';
+            }
+        }
+    </script>
+</body>
+</html>

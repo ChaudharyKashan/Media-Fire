@@ -1,0 +1,20 @@
+[
+  {
+    "id": "u1790241668329131",
+    "username": "kashan",
+    "email": "kashan@test.com",
+    "password": "$2a$10$tdJUEqI4bkziPse9cG.veuA1nV1W2SD7FIVhM72/gIeYQ13tBVl2e",
+    "storage_used": 12,
+    "created_at": "2026-09-24 09:21:08",
+    "status": "active"
+  },
+  {
+    "id": "u1790862804669532",
+    "username": "Chaudhary Kashan Meyo",
+    "email": "chaudharykashanmeyo@gmail.com",
+    "password": "$2a$10$.Ve/9uxS/ZyuXfx4J4p00ObnghJVEYTsjcZPzhkjRrvs.mGY6m2CG",
+    "storage_used": 455834,
+    "created_at": "2026-10-01 13:53:24",
+    "status": "active"
+  }
+]

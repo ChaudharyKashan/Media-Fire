@@ -1,0 +1,7 @@
+{
+  "name": "Chaudhary Kashan Meyo (MediaFire)",
+  "description": "A fast and secure file and folder sharing platform for uploading, organizing, sharing and downloading files.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
