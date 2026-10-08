@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "api/index.ts": {
-      "includeFiles": "views/**"
+      "includeFiles": "{views/**,favicon*,apple-touch-icon.png,public/**,data/**}"
     }
   },
   "rewrites": [

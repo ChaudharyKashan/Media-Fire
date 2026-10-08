@@ -184,6 +184,66 @@ app.use((req: any, res: any, next: any) => {
   next();
 });
 
+// Load favicon buffers into memory and prepare inline base64 data URI
+function loadAssetBuffer(filename: string): Buffer | null {
+  const candidates = [
+    path.resolve(process.cwd(), filename),
+    path.resolve(process.cwd(), 'public', filename),
+  ];
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) return fs.readFileSync(p);
+    } catch {}
+  }
+  return null;
+}
+
+const faviconIcoBuf = loadAssetBuffer('favicon.ico');
+const faviconPngBuf = loadAssetBuffer('favicon.png') || loadAssetBuffer('favicon-32x32.png');
+const favicon32Buf = loadAssetBuffer('favicon-32x32.png') || faviconPngBuf;
+const appleTouchBuf = loadAssetBuffer('apple-touch-icon.png') || faviconPngBuf;
+const FAVICON_DATA_URI = favicon32Buf
+  ? `data:image/png;base64,${favicon32Buf.toString('base64')}`
+  : '/favicon.png?v=20261008';
+
+app.use((req, res, next) => {
+  res.locals.faviconDataUri = FAVICON_DATA_URI;
+  next();
+});
+
+app.get('/favicon.ico', (_req, res) => {
+  if (faviconIcoBuf) {
+    res.setHeader('Content-Type', 'image/x-icon');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.send(faviconIcoBuf);
+  }
+  if (faviconPngBuf) {
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.send(faviconPngBuf);
+  }
+  return res.status(404).end();
+});
+
+app.get(['/favicon.png', '/favicon-32x32.png'], (req, res) => {
+  const buf = req.path.includes('32x32') ? favicon32Buf : faviconPngBuf;
+  if (buf) {
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.send(buf);
+  }
+  return res.status(404).end();
+});
+
+app.get('/apple-touch-icon.png', (_req, res) => {
+  if (appleTouchBuf) {
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.send(appleTouchBuf);
+  }
+  return res.status(404).end();
+});
+
 // Serve static assets (favicons, etc.)
 app.use(
   express.static(process.cwd(), {
