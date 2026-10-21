@@ -1,0 +1,129 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Unique user identifier",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 254
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name",
+          "maxLength": 100
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp",
+          "maxLength": 50
+        }
+      },
+      "required": ["uid", "email"]
+    },
+    "FileItem": {
+      "title": "FileItem",
+      "description": "File metadata item",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "File identifier",
+          "maxLength": 128
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Owner user ID",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Original file name",
+          "maxLength": 255
+        },
+        "size": {
+          "type": "number",
+          "description": "File size in bytes"
+        },
+        "mimeType": {
+          "type": "string",
+          "description": "MIME type",
+          "maxLength": 100
+        },
+        "folderId": {
+          "type": "string",
+          "description": "Folder ID where file is stored",
+          "maxLength": 128
+        },
+        "hasPassword": {
+          "type": "boolean",
+          "description": "Whether file is password-protected"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Upload timestamp",
+          "maxLength": 50
+        }
+      },
+      "required": ["id", "ownerId", "name"]
+    },
+    "Folder": {
+      "title": "Folder",
+      "description": "Folder metadata item",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Folder identifier",
+          "maxLength": 128
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Owner user ID",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Folder name",
+          "maxLength": 255
+        },
+        "parentId": {
+          "type": "string",
+          "description": "Parent folder ID or empty/root",
+          "maxLength": 128
+        },
+        "hasPassword": {
+          "type": "boolean",
+          "description": "Whether folder is password-protected"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp",
+          "maxLength": 50
+        }
+      },
+      "required": ["id", "ownerId", "name"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile collection"
+    },
+    "/files/{fileId}": {
+      "schema": "FileItem",
+      "description": "File metadata records"
+    },
+    "/folders/{folderId}": {
+      "schema": "Folder",
+      "description": "Folder records"
+    }
+  }
+}

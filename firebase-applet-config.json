@@ -1,11 +1,12 @@
 {
-  "projectId": "advance-air-4r5vm",
-  "appId": "1:871467377042:web:77d9dd4257ccf38a59614b",
-  "apiKey": "AIzaSyALNYd5XAWKXgTNbKuruJiTflrOgYnHm5k",
-  "authDomain": "advance-air-4r5vm.firebaseapp.com",
-  "storageBucket": "advance-air-4r5vm.firebasestorage.app",
-  "messagingSenderId": "871467377042",
+  "projectId": "chaudhary-kashan-meyo",
+  "appId": "1:595156509864:web:49b07ee0d075814aeb4e9d",
+  "apiKey": "AIzaSyDMP4yB5fEbyu0e36capxVgRZP1S0gZWmU",
+  "authDomain": "chaudhary-kashan-meyo.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-mediafire-36e6f123-3a55-4a34-ae3a-8f9c015d4b89",
+  "storageBucket": "chaudhary-kashan-meyo.firebasestorage.app",
+  "messagingSenderId": "595156509864",
   "measurementId": "",
-  "oAuthClientId": "871467377042-gtkm06dtv3jgnqlt4oqeqal98crkebi6.apps.googleusercontent.com",
+  "oAuthClientId": "595156509864-0ec39oc6plpgtua6lfujon00d3euffq2.apps.googleusercontent.com",
   "recaptchaSiteKey": ""
 }

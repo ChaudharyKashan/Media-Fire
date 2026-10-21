@@ -35,6 +35,8 @@ import {
   type FolderItem,
   type Settings,
 } from './storage.js';
+import './lib/firebase.js';
+import firebaseConfig from '../firebase-applet-config.json' with { type: 'json' };
 
 declare module 'express-session' {
   interface SessionData {
@@ -182,6 +184,15 @@ app.use((req: any, res: any, next: any) => {
   }
 
   next();
+});
+
+app.use((_req, res, next) => {
+  res.locals.firebaseConfig = firebaseConfig;
+  next();
+});
+
+app.get('/api/firebase-config', (_req, res) => {
+  res.json(firebaseConfig);
 });
 
 // Load favicon buffers into memory and prepare inline base64 data URI
